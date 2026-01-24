@@ -1,0 +1,223 @@
+{
+    "nodes": [
+      {
+        "parameters": {
+          "updates": ["message"],
+          "additionalFields": {}
+        },
+        "type": "n8n-nodes-base.telegramTrigger",
+        "typeVersion": 1.1,
+        "position": [640, 256],
+        "id": "e8d9dd53-b021-48ad-9ae7-3282a22bec54",
+        "name": "Telegram Trigger1",
+        "webhookId": "c0eee8d7-a6cd-42b5-8ea9-47c43e79c2ec",
+        "notesInFlow": false,
+        "credentials": {
+          "telegramApi": {
+            "id": "YOUR_TELEGRAM_API",
+            "name": "Telegram account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": [
+            {
+              "id": "ead608af-7a53-4330-a679-6a5df4bd5ad8",
+              "name": "text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ],
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [928, 256],
+        "id": "5a90b6ee-2caf-4ef6-840e-30c19a3070ee",
+        "name": "Edit Fields1"
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "calendar": {
+            "__rl": true,
+            "value": "YOUR_EMAIL",
+            "mode": "list",
+            "cachedResultName": "YOUR_EMAIL"
+          },
+          "eventId": "={{ $fromAI(\"Event_ID\",\"it is the id of the specific event\") }}",
+          "updateFields": {
+            "end": "={{ $fromAI(\"end\",\"it is the meeting date ending time\") }}",
+            "start": "={{ $fromAI(\"Start\",\"it is the meeting date starting time\") }}",
+            "summary": "={{ $fromAI(\"eventName\",\"the name of the calendar event\") }}"
+          }
+        },
+        "type": "n8n-nodes-base.googleCalendarTool",
+        "typeVersion": 1.3,
+        "position": [1632, 544],
+        "id": "ec53bcca-b297-42ed-83b0-6db0cefb9b4b",
+        "name": "Update calendar",
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "YOUR_GOOGLE_CALENDAR_API",
+            "name": "Google Calendar account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "descriptionType": "manual",
+          "toolDescription": "Use this tool to create a new calendar event.",
+          "calendar": {
+            "__rl": true,
+            "value": "YOUR_EMAIL",
+            "mode": "list",
+            "cachedResultName": "YOUR_EMAIL"
+          },
+          "start": "={{ $fromAI(\"Start\",\"it is the meeting date starting time\") }}",
+          "end": "={{ $fromAI(\"end\",\"it is the meeting date ending time\") }}",
+          "additionalFields": {
+            "summary": "={{ $fromAI(\"eventName\",\"the name of the calendar event\") }}"
+          }
+        },
+        "type": "n8n-nodes-base.googleCalendarTool",
+        "typeVersion": 1.3,
+        "position": [1248, 704],
+        "id": "eb455367-a221-490e-91cb-92f65288ff2f",
+        "name": "Create event",
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "YOUR_GOOGLE_CALENDAR_API",
+            "name": "Google Calendar account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "delete",
+          "calendar": {
+            "__rl": true,
+            "value": "YOUR_EMAIL",
+            "mode": "list",
+            "cachedResultName": "YOUR_EMAIL"
+          },
+          "eventId": "={{ $fromAI(\"Event_ID\",\"it is the id of the specific event\") }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleCalendarTool",
+        "typeVersion": 1.3,
+        "position": [1392, 704],
+        "id": "ed55a1bc-4bb4-4b84-9295-1e9f7f1d4b42",
+        "name": "Delete event",
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "YOUR_GOOGLE_CALENDAR_API",
+            "name": "Google Calendar account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "calendar": {
+            "__rl": true,
+            "value": "=YOUR_EMAIL",
+            "mode": "id"
+          },
+          "returnAll": true,
+          "timeMin": "={{ $fromAI('After', ``, 'string') }}",
+          "timeMax": "={{ $now.plus({ week: 4 }) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleCalendarTool",
+        "typeVersion": 1.3,
+        "position": [1520, 624],
+        "id": "cc304af7-417d-4199-af79-8dd198dafb98",
+        "name": "GetAll events",
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "YOUR_GOOGLE_CALENDAR_API",
+            "name": "Google Calendar account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $('Telegram Trigger1').item.json.update_id }}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.3,
+        "position": [1136, 624],
+        "id": "5f7225e5-6f9b-4f58-9a79-cbb24f123076",
+        "name": "Window Buffer Memory"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $json.text }}",
+          "options": {
+            "systemMessage": "=YOUR_SANITIZED_SYSTEM_MESSAGE"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 1.7,
+        "position": [1200, 256],
+        "id": "6ecd1e08-0ad4-45b4-bf98-4af4057375ae",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+          "text": "={{ $json.output }}",
+          "additionalFields": {
+            "appendAttribution": false
+          }
+        },
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [1664, 256],
+        "id": "e6d22510-73a5-40a9-bb61-6f49f0ed4115",
+        "name": "Telegram",
+        "webhookId": "c7f74669-a664-4c32-8579-efa03d86ff4e",
+        "credentials": {
+          "telegramApi": {
+            "id": "YOUR_TELEGRAM_API",
+            "name": "Telegram account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "model": "openrouter/auto",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+        "typeVersion": 1,
+        "position": [1072, 464],
+        "id": "dd9fd63d-be50-46a4-8546-63cfbb592812",
+        "name": "OpenRouter Chat Model",
+        "credentials": {
+          "openRouterApi": {
+            "id": "YOUR_OPENROUTER_API",
+            "name": "OpenRouter account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Telegram Trigger1": { "main": [[{"node": "Edit Fields1","type": "main","index": 0}]] },
+      "Edit Fields1": { "main": [[{"node": "AI Agent","type": "main","index": 0}]] },
+      "Update calendar": { "ai_tool": [[{"node": "AI Agent","type": "ai_tool","index": 0}]] },
+      "Create event": { "ai_tool": [[{"node": "AI Agent","type": "ai_tool","index": 0}]] },
+      "Delete event": { "ai_tool": [[{"node": "AI Agent","type": "ai_tool","index": 0}]] },
+      "GetAll events": { "ai_tool": [[{"node": "AI Agent","type": "ai_tool","index": 0}]] },
+      "Window Buffer Memory": { "ai_memory": [[{"node": "AI Agent","type": "ai_memory","index": 0}]] },
+      "AI Agent": { "main": [[{"node": "Telegram","type": "main","index": 0}]] },
+      "OpenRouter Chat Model": { "ai_languageModel": [[{"node": "AI Agent","type": "ai_languageModel","index": 0}]] }
+    },
+    "pinData": {},
+    "meta": { "templateCredsSetupCompleted": true, "instanceId": "YOUR_INSTANCE_ID" }
+  }
+  
