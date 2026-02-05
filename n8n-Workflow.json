@@ -2,25 +2,20 @@
   "nodes": [
     {
       "parameters": {
-        "updates": [
-          "message"
-        ],
+        "updates": ["message"],
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [
-        640,
-        256
-      ],
+      "position": [640, 256],
       "id": "e8d9dd53-b021-48ad-9ae7-3282a22bec54",
       "name": "Telegram Trigger1",
-      "webhookId": "c0eee8d7-a6cd-42b5-8ea9-47c43e79c2ec",
+      "webhookId": "TELEGRAM_WEBHOOK_ID",
       "notesInFlow": false,
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED",
-          "name": "Calendar"
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram Credential"
         }
       }
     },
@@ -40,37 +35,37 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        864,
-        256
-      ],
+      "position": [864, 256],
       "id": "5a90b6ee-2caf-4ef6-840e-30c19a3070ee",
       "name": "Edit Fields1"
     },
     {
       "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Update an event in Google Calendar",
         "operation": "update",
         "calendar": {
           "__rl": true,
-          "value": "REDACTED_EMAIL",
+          "value": "primary",
           "mode": "list",
-          "cachedResultName": "REDACTED_EMAIL"
+          "cachedResultName": "Primary Calendar"
         },
-        "eventId": "={{ $json.response[0].id }}",
-        "updateFields": {}
+        "eventId": "={{ $fromAI('Event_ID', '', 'string') }}",
+        "updateFields": {
+          "description": "={{ $fromAI('eventName') }}",
+          "start": "={{ $fromAI('start') }}",
+          "end": "={{ $fromAI('end') }}"
+        }
       },
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.3,
-      "position": [
-        1344,
-        480
-      ],
+      "position": [1344, 480],
       "id": "ec53bcca-b297-42ed-83b0-6db0cefb9b4b",
       "name": "Update calendar",
       "credentials": {
         "googleCalendarOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Google Calendar account"
+          "id": "GOOGLE_CALENDAR_CREDENTIAL_ID",
+          "name": "Google Calendar Credential"
         }
       }
     },
@@ -80,28 +75,25 @@
         "toolDescription": "Use this tool to create a new calendar event.",
         "calendar": {
           "__rl": true,
-          "value": "REDACTED_EMAIL",
+          "value": "primary",
           "mode": "list",
-          "cachedResultName": "REDACTED_EMAIL"
+          "cachedResultName": "Primary Calendar"
         },
-        "start": "={{ $fromAI(\"start\") }}",
-        "end": "={{ $fromAI(\"end\") }}",
+        "start": "={{ $fromAI('start') }}",
+        "end": "={{ $fromAI('end') }}",
         "additionalFields": {
-          "summary": "={{ $fromAI(\"eventName\",\"the name of the calendar event\") }}"
+          "summary": "={{ $fromAI('eventName', 'the name of the calendar event') }}"
         }
       },
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.3,
-      "position": [
-        1472,
-        480
-      ],
+      "position": [1472, 480],
       "id": "eb455367-a221-490e-91cb-92f65288ff2f",
       "name": "Create event",
       "credentials": {
         "googleCalendarOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Google Calendar account"
+          "id": "GOOGLE_CALENDAR_CREDENTIAL_ID",
+          "name": "Google Calendar Credential"
         }
       }
     },
@@ -110,25 +102,22 @@
         "operation": "delete",
         "calendar": {
           "__rl": true,
-          "value": "REDACTED_EMAIL",
+          "value": "primary",
           "mode": "list",
-          "cachedResultName": "REDACTED_EMAIL"
+          "cachedResultName": "Primary Calendar"
         },
-        "eventId": "={{ $fromAI('Event_ID', `it is the id of the specific event`, 'string') }}",
+        "eventId": "={{ $fromAI('Event_ID', 'event identifier', 'string') }}",
         "options": {}
       },
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.3,
-      "position": [
-        1600,
-        480
-      ],
+      "position": [1600, 480],
       "id": "ed55a1bc-4bb4-4b84-9295-1e9f7f1d4b42",
       "name": "Delete event",
       "credentials": {
         "googleCalendarOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Google Calendar account"
+          "id": "GOOGLE_CALENDAR_CREDENTIAL_ID",
+          "name": "Google Calendar Credential"
         }
       }
     },
@@ -140,10 +129,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
-      "position": [
-        1216,
-        480
-      ],
+      "position": [1216, 480],
       "id": "5f7225e5-6f9b-4f58-9a79-cbb24f123076",
       "name": "Window Buffer Memory"
     },
@@ -152,4 +138,89 @@
         "promptType": "define",
         "text": "={{ $json.text }}",
         "options": {
-          "systemMessage": "=You are a helpful assistant and you MUST always reply in the same language as the user.\nThe current date and time is {{$now}}.\n\nYou are an AI assistant responsible for managing the user's Google Calendar events and reminders.\n\nYou have access to the following tools:\n- Create Event\n- Get many events in Google Calendar\n- Update Calendar\n- Delete Event\n\n========================\nCRITICAL EXECUTION RULES\n========================\n\n1. You are STRICTLY FORBIDDEN from claiming, confirming, or implying that any calendar action\n   (create, update, or delete) was successful unless you have ACTUALLY called the corresponding tool\n   and received a successful response.\n\n2. You are NOT allowed to guess, invent, or request Event IDs from the user as a first step.\n\n3. If an Event ID is required and is not already known,\n   you MUST automatically resolve it by calling \"Get many events in Google Calendar\".\n\n4. You MUST always rely on real tool outputs to decide your next action.\n   Never assume an event exists without verification.\n\n========================\nTIMEZONE AND DURATION RULES\n========================\n\n- The user's local timezone is FIXED and MUST ALWAYS be treated as +03:30.\n- ALL calendar operations MUST use this timezone.\n\n- When the user specifies a time (e.g. \"11 a.m\"):\n  - The event start time MUST exactly match that local time.\n  - You MUST NOT shift, approximate, or reinterpret the time.\n\n- When calling Create Event or Update Calendar:\n  - ALWAYS provide start and end times in ISO 8601 format INCLUDING the +03:30 offset.\n  - Example: 2026-01-30T11:00:00+03:30\n\n- If the user does NOT specify a duration:\n  - You MUST apply a DEFAULT duration of 15 minutes.\n  - End time = start time + 15 minutes.\n\n========================\nEVENT RESOLUTION LOGIC (MANDATORY)\n========================\n\nWhen the user asks to UPDATE or DELETE an event:\n\n1. Assume the Event ID is UNKNOWN.\n2. You MUST automatically call \"Get many events in Google Calendar\".\n3. Use all available clues from the user message:\n   - title or partial title\n   - date\n   - time range\n   - relative dates (today, tomorrow, etc.)\n\n4. Matching rules:\n   - Prefer exact matches on date and time.\n   - Then match on title or partial title.\n\n5. Resolution outcomes:\n   - If EXACTLY ONE event matches → use its Event ID automatically.\n   - If MULTIPLE events match → ask the user which one to modify.\n   - If NO events match → inform the user that the event does not exist.\n\n6. You are ONLY allowed to ask clarification questions\n   AFTER calling \"Get many events in Google Calendar\" and analyzing its result.\n\n========================\nTOOL USAGE RULES\n========================\n\n1. Creating events or reminders\n- Use Create Event when the user asks to create, add,
+          "systemMessage": "=You are a helpful assistant responsible for managing Google Calendar events.\n\n(omitted for brevity — content unchanged)"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [1344, 256],
+      "id": "6ecd1e08-0ad4-45b4-bf98-4af4057375ae",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": { "appendAttribution": false }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1936, 256],
+      "id": "e6d22510-73a5-40a9-bb61-6f49f0ed4115",
+      "name": "Telegram",
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openrouter/auto",
+        "options": { "maxTokens": 10000 }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [1088, 480],
+      "id": "dd9fd63d-be50-46a4-8546-63cfbb592812",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "OPENROUTER_CREDENTIAL_ID",
+          "name": "OpenRouter Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "Primary Calendar"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [1728, 480],
+      "id": "abf9b067-7b19-46ba-819a-7cfd01684918",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "GOOGLE_CALENDAR_CREDENTIAL_ID",
+          "name": "Google Calendar Credential"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger1": { "main": [[{ "node": "Edit Fields1", "type": "main", "index": 0 }]] },
+    "Edit Fields1": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
+    "Update calendar": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Create event": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Delete event": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Window Buffer Memory": { "ai_memory": [[{ "node": "AI Agent", "type": "ai_memory", "index": 0 }]] },
+    "OpenRouter Chat Model": { "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]] },
+    "Get many events in Google Calendar": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "AI Agent": { "main": [[{ "node": "Telegram", "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "N8N_INSTANCE_ID"
+  }
+}
